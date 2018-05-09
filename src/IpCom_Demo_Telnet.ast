@@ -1,0 +1,45 @@
+hostname={line=2,endLine=2,name=RikkeiJP}
+interface={line=10,endLine=13,name=lan0.0
+  ip={line=11,endLine=11,address=192.168.1.111,mask=255.255.255.0}
+  negotiation={line=12,endLine=12,status=on}}
+interface={line=15,endLine=17,name=lan0.1
+  ip={line=16,endLine=16,address=150.1.1.1,mask=255.255.255.0}}
+interface={line=20,endLine=21,name=lan0.2}
+interface={line=22,endLine=23,name=lan0.3}
+interface={line=24,endLine=29,name=vlan100
+  ip={line=25,endLine=25,address=172.16.100.1,mask=255.255.255.0}
+  vlanLink={line=26,endLine=26,namePort=lan0.2,option=untagged}
+  vlanLink={line=27,endLine=27,namePort=lan0.3,option=dot1q-tagged}
+  ipv6Address={line=28,endLine=28,ipv6Address=2005:100::1/64}}
+interface={line=30,endLine=33,name=vlan200
+  ip={line=31,endLine=31,address=172.16.200.2,mask=255.255.255.0}
+  vlanLink={line=32,endLine=32,namePort=lan0.3,option=dot1q-tagged}}
+interface={line=34,endLine=36,name=mnt
+  ip={line=35,endLine=35,address=10.10.10.2,mask=255.255.255.0}}
+ipRoute={line=37,endLine=37,routeAdress=0.0.0.0/0,routeMark=192.168.1.1}
+ipRoute={line=38,endLine=38,routeAdress=150.1.1.0/24,routeMark=192.168.1.2}
+ipRoute={line=40,endLine=40,routeAdress=170.1.1.0/24,routeMark=lan0.0}
+user={line=75,endLine=76,name=admin}
+user={line=80,endLine=81,name=huynq3}
+interfacel2={line=90,endLine=94,nameLine=lan0.0     MTU:   1500  <LINKUP>
+  tpye={line=91,endLine=91,typeNameLine=gigabit ethernet}
+  description={line=92,endLine=92}
+  macAddress={line=93,endLine=93,macAddress=00:80:17:ef:0a:96}}
+interfacel2={line=99,endLine=103,nameLine=lan0.1     MTU:   1500  <LINKDOWN>
+  tpye={line=100,endLine=100,typeNameLine=ethernet}
+  description={line=101,endLine=101}
+  macAddress={line=102,endLine=102,macAddress=00:80:17:ef:0a:95}}
+interfacel2={line=109,endLine=112,nameLine=lan0.2     MTU:   1500  <LINKDOWN>
+  tpye={line=110,endLine=110,typeNameLine=ethernet}
+  description={line=111,endLine=111}}
+interfacel2={line=113,endLine=116,nameLine=lan0.3     MTU:   1500  <LINKDOWN>
+  tpye={line=114,endLine=114,typeNameLine=ethernet}
+  description={line=115,endLine=115}}
+interfacel2={line=117,endLine=121,nameLine=vlan100    MTU:   1500  <LINKDOWN>
+  tpye={line=118,endLine=118,typeNameLine=vlan}
+  description={line=119,endLine=119}
+  macAddress={line=120,endLine=120,macAddress=00:80:17:ef:0a:98}}
+interfacel2={line=127,endLine=131,nameLine=vlan200    MTU:   1500  <LINKDOWN>
+  tpye={line=128,endLine=128,typeNameLine=vlan}
+  description={line=129,endLine=129}
+  macAddress={line=130,endLine=130,macAddress=00:80:17:ef:0a:95}}
