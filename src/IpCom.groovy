@@ -53,6 +53,7 @@ comms { // This section has code to communicate over various protocols to fetch 
         }
 
         getConfig { // Section to get the config
+
            def cfg = sendAndReadUntil 'show running-config', CLI_READY
             log.debug("Got config $cfg")
 
@@ -113,7 +114,7 @@ user %{name}
   
 // L2
 // interface
-interfacel2:: &{getL2:name}
+interfaceL2:: &{getL2:name}
   tpye:: Type\\: &{getLine:typeName}
   description:: Description\\: ?{description}
   macAddress:: MAC address\\: %{macAddress}
@@ -156,12 +157,15 @@ rsxml {
             // create the OS node. Use the version we just parsed
             OS(name: 'Mac OS', vendor: 'Redseal', versionString: version)
 
-            log.debug(parsedConfig.interfacel2)
+            log.debug(parsedConfig.interfaceL2?:"null-l2")
+            boolean readFormCommand = parsedConfig.interfaceL2?true:false
+            def listInterface = parsedConfig.interfaceL2?:parsedConfig.interface
 
             // We only need the active interfaces, so find them
-            def activeInterfaces = parsedConfig.interface.findAll {
+            def activeInterfaces = listInterface.findAll {
                 // active interface is one which is not shut and has an ip
-                def active = !it.shut && it.ip
+                // case show interface not check
+                def active = (!it.shut && it.ip || it.nameLine)
                 if (!active) // In this sample, we will add warnings for non-active interfaces.
                     _addInconsistencyParserWarning("Skipping ${it.name} since it is not configured", it.line)
                 return active
@@ -175,74 +179,85 @@ rsxml {
             // group name
             interfaceNames = []
 
-            // start network ports
-            networkPorts {
-                activeInterfaces.each { intf ->    // Add each of the active interfaces.
-                def intfMap = []
+            if (!readFormCommand) {
+                log.debug("read from config file file ---------------------")
+                addNetworkPortsFromConfig(activeInterfaces)
+                } else {
+                    log.debug("read via command ---------------------")
+                    log.debug(activeInterfaces)
+                    // start network ports
+                    rsXmlBuilder.networkPorts {
+                        activeInterfaces.each { intf ->    // Add each of the active interfaces.
+                        def intfMap = []
+                        String beforeNameLine = intf.nameLine?:"UnKnown"
+                        String[] nameArray = beforeNameLine.replaceAll("\\s+", " ").split(" ")
+                        log.debug( "AAAAA" + nameArray?:"")
 
-                //log.debug(intf)
-                def intfName = intf.name?:"UnKnown"
-                interfaceNames << intfName
-                type = intf.type
-                    if (!type) {
-                        if (intf.name ==~ /(?i)^.*(mnt|lan|bnd|channel|vlan|pass|ppp).*$/)
-                            type = 'ETHERNET'
-                        else
-                            type = 'UNKNOWN'
-                    }
-
-                    intfMap = [name: intf.name, type: type]
-                    def allIpDetails = [] // Array to store all the configured IP details.
-                    intf.ip.each { ip ->
-                        def ipDetails = []
-                        def secDetails = []
-                        if(ip.address != null) {
-                            ipDetails = [address: ip.address, netmask: ip.mask] // Extract the address and mask
-                        } else {
-                            ipMask = ip.ipAndMask
-                            if (ipMask != null){
-                                ipDetails = getIpAndMask(ipMask)
+                        //log.debug(intf)
+                        def intfName = nameArray[0]
+                        interfaceNames << intfName
+                        type = intf.type
+                            if (!type) {
+                                if (intfName ==~ /(?i)^.*(mnt|lan|bnd|channel|vlan|pass|ppp).*$/)
+                                    type = 'ETHERNET'
+                                else
+                                    type = 'UNKNOWN'
                             }
+                            def networkAddress = intf.macAddress?.macAddress?.first()?:null
+                            intfMap = [name: intfName, type: type, networkAddress: networkAddress]
+                            /*def allIpDetails = [] // Array to store all the configured IP details.
+                            intf.ip.each { ip ->
+                                def ipDetails = []
+                                def secDetails = []
+                                if(ip.address != null) {
+                                    ipDetails = [address: ip.address, netmask: ip.mask] // Extract the address and mask
+                                } else {
+                                    ipMask = ip.ipAndMask
+                                    if (ipMask != null){
+                                        ipDetails = getIpAndMask(ipMask)
+                                    }
+                                }
+                                if (isManagement(intfName)) {
+                                    ipDetails << [management: "true"]
+                                }
+                                allIpDetails << ipDetails
+                            }*/
+
+                            /*def allNegoDetails = []
+                            intf.negotiation.each { nego ->
+                                def dataNego = nego.status?:"UnKnown"
+                                allNegoDetails = [negotiation: dataNego]
+                            }*/
+                            /*String show = allIpDetails.get(0).address
+                            if (show.size() > 2){
+                                intfMap << [ip: allIpDetails]
+                            }*/
+                            def des = intf.description?.first()?.description?:null
+                            intfMap << [description: des]
+
+                            /*String ipv6AddressAndMask = intf.ipv6Address?.first()?.ipv6Address?:"None"
+                            if (!ipv6AddressAndMask.equals("None")) {
+                                def ipv6Details = [aliasName: intf.name + " ipv6"]
+                                String[] splits = ipv6AddressAndMask.split("/")
+                                def ipv6Address
+                                def ipv6Mask
+                                if (splits.size() == 2) {
+                                    ipv6Address = splits[0]
+                                    ipv6Mask = splits[1]
+                                }
+                                ipv6Details << [address: ipv6Address, maskLength: ipv6Mask, type: "STATIC"]
+                                intfMap << [ipv6: [ipv6Details]]
+                            }*/
+
+                            log.debug(intfMap)
+                            _mapToNetworkPort(intfMap)
+                            
+
                         }
-                        if (isManagement(intfName)) {
-                            ipDetails << [management: "true"]
-                        }
-                        allIpDetails << ipDetails
                     }
-
-                    def allNegoDetails = []
-                    intf.negotiation.each { nego ->
-                        def dataNego = nego.status?:"UnKnown"
-                        allNegoDetails = [negotiation: dataNego]
-                    }
-                    String show = allIpDetails.get(0).address
-                    if (show.size() > 2){
-                        intfMap << [ip: allIpDetails]
-                    }
-                    def des = intf.description?.first()?.description?:"None"
-                    intfMap << [description: des]
-
-                    String ipv6AddressAndMask = intf.ipv6Address?.first()?.ipv6Address?:"None"
-                    if (!ipv6AddressAndMask.equals("None")) {
-                        def ipv6Details = [aliasName: intf.name + " ipv6"]
-                        String[] splits = ipv6AddressAndMask.split("/")
-                        def ipv6Address
-                        def ipv6Mask
-                        if (splits.size() == 2) {
-                            ipv6Address = splits[0]
-                            ipv6Mask = splits[1]
-                        }
-                        ipv6Details << [address: ipv6Address, maskLength: ipv6Mask, type: "STATIC"]
-                        intfMap << [ipv6: [ipv6Details]]
-                    }
-
-                    log.debug(intfMap)
-                    _mapToNetworkPort(intfMap)
-                    
-
+                    // end network ports
                 }
-            }
-            // end network ports
+            
 
             ///////////////
             // IP GROUPS //
@@ -256,19 +271,78 @@ rsxml {
                 }
             }
 
-            // add new node via function will use in future
-            // addFilterRuleList()
-
         }
     }
 }
 
 
-def addFilterRuleList() {
-    rsXmlBuilder.filterRuleLists {
-        filterRuleList(id: parsedConfig.hostname.first().name?:"NoName") {
-            def rsRule = [action: "ALLOW", isImplicit: "true", srcAddress: "any", dstAddress: "any"]
-            _mapToFilterRule(rsRule)
+def addNetworkPortsFromConfig(activeInterfaces) {
+    // start network ports
+    rsXmlBuilder.networkPorts {
+        activeInterfaces.each { intf ->    // Add each of the active interfaces.
+        def intfMap = []
+
+        //log.debug(intf)
+        def intfName = intf.name?:"UnKnown"
+        interfaceNames << intfName
+        type = intf.type
+            if (!type) {
+                if (intf.name ==~ /(?i)^.*(mnt|lan|bnd|channel|vlan|pass|ppp).*$/)
+                    type = 'ETHERNET'
+                else
+                    type = 'UNKNOWN'
+            }
+
+            intfMap = [name: intf.name, type: type]
+            def allIpDetails = [] // Array to store all the configured IP details.
+            intf.ip.each { ip ->
+                def ipDetails = []
+                def secDetails = []
+                if(ip.address != null) {
+                    ipDetails = [address: ip.address, netmask: ip.mask] // Extract the address and mask
+                } else {
+                    ipMask = ip.ipAndMask
+                    if (ipMask != null){
+                        ipDetails = getIpAndMask(ipMask)
+                    }
+                }
+                if (isManagement(intfName)) {
+                    ipDetails << [management: "true"]
+                }
+                allIpDetails << ipDetails
+            }
+
+            def allNegoDetails = []
+            intf.negotiation.each { nego ->
+                def dataNego = nego.status?:"UnKnown"
+                allNegoDetails = [negotiation: dataNego]
+            }
+            String show = allIpDetails.get(0).address
+            if (show.size() > 2){
+                intfMap << [ip: allIpDetails]
+            }
+            def des = intf.description?.first()?.description?:"None"
+            intfMap << [description: des]
+
+            String ipv6AddressAndMask = intf.ipv6Address?.first()?.ipv6Address?:"None"
+            if (!ipv6AddressAndMask.equals("None")) {
+                def ipv6Details = [aliasName: intf.name + " ipv6"]
+                String[] splits = ipv6AddressAndMask.split("/")
+                def ipv6Address
+                def ipv6Mask
+                if (splits.size() == 2) {
+                    ipv6Address = splits[0]
+                    ipv6Mask = splits[1]
+                }
+                ipv6Details << [address: ipv6Address, maskLength: ipv6Mask, type: "STATIC"]
+                intfMap << [ipv6: [ipv6Details]]
+            }
+
+            log.debug(intfMap)
+            _mapToNetworkPort(intfMap)
+            
+
         }
     }
+    // end network ports
 }

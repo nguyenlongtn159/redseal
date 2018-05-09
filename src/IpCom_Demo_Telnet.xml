@@ -147,53 +147,27 @@ RikkeiJP&gt;
 </content>
                     </rawConfig>
                 </rawConfigs>
-                <parserWarnings>
-                    <parserWarning
-                        description="Skipping lan0.2 since it is not configured"
-                        lineNumber="20" warningType="INCONSISTENCY"/>
-                    <parserWarning
-                        description="Skipping lan0.3 since it is not configured"
-                        lineNumber="22" warningType="INCONSISTENCY"/>
-                </parserWarnings>
             </config>
             <networkPorts>
-                <networkPort description="None" name="lan0.0" type="ETHERNET">
-                    <ips>
-                        <ip address="192.168.1.111" netmask="255.255.255.0"/>
-                    </ips>
-                </networkPort>
-                <networkPort description="None" name="lan0.1" type="ETHERNET">
-                    <ips>
-                        <ip address="150.1.1.1" netmask="255.255.255.0"/>
-                    </ips>
-                </networkPort>
-                <networkPort description="None" name="vlan100" type="ETHERNET">
-                    <ips>
-                        <ip address="172.16.100.1" netmask="255.255.255.0"/>
-                    </ips>
-                    <ipv6s>
-                        <ipv6 address="2005:100::1"
-                            aliasName="vlan100 ipv6" maskLength="64" type="STATIC"/>
-                    </ipv6s>
-                </networkPort>
-                <networkPort description="None" name="vlan200" type="ETHERNET">
-                    <ips>
-                        <ip address="172.16.200.2" netmask="255.255.255.0"/>
-                    </ips>
-                </networkPort>
-                <networkPort description="None" name="mnt" type="ETHERNET">
-                    <ips>
-                        <ip address="10.10.10.2" management="true" netmask="255.255.255.0"/>
-                    </ips>
-                </networkPort>
+                <networkPort name="lan0.0"
+                    networkAddress="00:80:17:ef:0a:96" type="ETHERNET"/>
+                <networkPort name="lan0.1"
+                    networkAddress="00:80:17:ef:0a:95" type="ETHERNET"/>
+                <networkPort name="lan0.2" type="ETHERNET"/>
+                <networkPort name="lan0.3" type="ETHERNET"/>
+                <networkPort name="vlan100"
+                    networkAddress="00:80:17:ef:0a:98" type="ETHERNET"/>
+                <networkPort name="vlan200"
+                    networkAddress="00:80:17:ef:0a:95" type="ETHERNET"/>
             </networkPorts>
             <ipGroups>
                 <group ref="Any">
                     <aliasName>lan0.0</aliasName>
                     <aliasName>lan0.1</aliasName>
+                    <aliasName>lan0.2</aliasName>
+                    <aliasName>lan0.3</aliasName>
                     <aliasName>vlan100</aliasName>
                     <aliasName>vlan200</aliasName>
-                    <aliasName>mnt</aliasName>
                 </group>
             </ipGroups>
         </system>
